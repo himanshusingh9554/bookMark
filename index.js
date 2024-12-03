@@ -1,113 +1,90 @@
-// Replace with your unique CRUD CRUD API endpoint
-const API_URL = "https://crudcrud.com/api/54bffed90c234da5af39a02f692cafe6/bookmarks";
+// Array to hold bookmarks
+let bookmarks = [];
 
-// Load bookmarks when the page loads
-window.onload = function () {
-  fetchBookmarks();
+// Load bookmarks from local storage when the page loads
+window.onload = function() {
+    const storedBookmarks = JSON.parse(localStorage.getItem('bookmarks'));
+    if (storedBookmarks) {
+        bookmarks = storedBookmarks;
+        renderBookmarks();
+    }
 };
 
-// Fetch bookmarks from CRUD CRUD
-async function fetchBookmarks() {
-  try {
-    const response = await fetch(API_URL);
-    const bookmarks = await response.json();
-    displayBookmarks(bookmarks);
-  } catch (error) {
-    console.error("Error fetching bookmarks:", error);
-  }
-}
+// Function to add a bookmark
+function addBookmark() {
+    event.preventDefault();
+    
+    // Get the title and URL from input fields
+    const title = document.getElementById('title').value.trim();
+    const url = document.getElementById('url').value.trim();
 
-// Add a new bookmark
-async function addBookmark() {
-  const title = document.getElementById("title").value;
-  const url = document.getElementById("url").value;
+    // Validate input fields
+    if (!title || !url) {
+        alert("Please fill in both the title and URL.");
+        return; // Exit the function if validation fails
+    }
 
-  if (!title || !url) {
-    alert("Please fill in both fields!");
-    return;
-  }
+    // Create a bookmark object
+    const bookmark = {
+        id: Date.now(), // Unique ID based on timestamp
+        title: title,
+        url: url
+    };
 
-  const bookmark = { title, url };
+    // Add the bookmark to the array
+    bookmarks.push(bookmark);
 
-  try {
-    // Save to CRUD CRUD
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bookmark),
-    });
-
-    // Update the UI
-    const newBookmark = await response.json();
-    appendBookmarkToUI(newBookmark);
+    // Save bookmarks to local storage
+    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
 
     // Clear input fields
-    document.getElementById("title").value = "";
-    document.getElementById("url").value = "";
-  } catch (error) {
-    console.error("Error adding bookmark:", error);
-  }
+    document.getElementById('website').reset();
+
+    // Render bookmarks
+    renderBookmarks();
 }
 
-// Display all bookmarks
-function displayBookmarks(bookmarks) {
-  const bookmarksDiv = document.getElementById("bookmarks");
-  bookmarksDiv.innerHTML = "";
+// Function to render bookmarks
+function renderBookmarks() {
+    const bookmarkContainer = document.getElementById('bookmark');
+    
+    // Clear existing bookmarks
+    bookmarkContainer.innerHTML = '';
 
-  bookmarks.forEach((bookmark) => {
-    appendBookmarkToUI(bookmark);
-  });
-}
-
-// Append a single bookmark to the UI
-function appendBookmarkToUI(bookmark) {
-  const bookmarksDiv = document.getElementById("bookmarks");
-  const div = document.createElement("div");
-  div.classList.add("bookmark");
-  div.innerHTML = `
-    <a href="${bookmark.url}" target="_blank">${bookmark.title}</a>
-    <button onclick="deleteBookmark('${bookmark._id}')">Delete</button>
-    <button onclick="editBookmark('${bookmark._id}', '${bookmark.title}', '${bookmark.url}')">Edit</button>
-  `;
-  bookmarksDiv.appendChild(div);
-}
-
-// Delete a bookmark
-async function deleteBookmark(id) {
-  try {
-    // Delete from CRUD CRUD
-    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-
-    // Remove from UI
-    fetchBookmarks();
-  } catch (error) {
-    console.error("Error deleting bookmark:", error);
-  }
-}
-
-// Edit a bookmark
-async function editBookmark(id, oldTitle, oldUrl) {
-  const newTitle = prompt("Edit Title:", oldTitle);
-  const newUrl = prompt("Edit URL:", oldUrl);
-
-  if (!newTitle || !newUrl) {
-    alert("Title and URL cannot be empty!");
-    return;
-  }
-
-  const updatedBookmark = { title: newTitle, url: newUrl };
-
-  try {
-    // Update on CRUD CRUD
-    await fetch(`${API_URL}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedBookmark),
+    // Loop through bookmarks and create HTML elements for each
+    bookmarks.forEach(bookmark => {
+        const div = document.createElement('div');
+        div.className = 'bookmark-item';
+        div.innerHTML = `
+            <h3>${bookmark.title}</h3>
+            <a href="${bookmark.url}" target="_blank">${bookmark.url}</a>
+            <button onclick="editBookmark(${bookmark.id})">Edit</button>
+            <button onclick="deleteBookmark(${bookmark.id})">Delete</button>
+        `;
+        bookmarkContainer.appendChild(div);
     });
+}
 
-    // Refresh the UI
-    fetchBookmarks();
-  } catch (error) {
-    console.error("Error editing bookmark:", error);
-  }
+// Function to edit a bookmark
+function editBookmark(id) {
+    const bookmark = bookmarks.find(b => b.id === id);
+    
+    if (bookmark) {
+        document.getElementById('title').value = bookmark.title;
+        document.getElementById('url').value = bookmark.url;
+
+        // Remove the bookmark from the array for editing
+        deleteBookmark(id);
+    }
+}
+
+// Function to delete a bookmark
+function deleteBookmark(id) {
+    bookmarks = bookmarks.filter(bookmark => bookmark.id !== id);
+    
+    // Save updated bookmarks to local storage
+    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+    
+    // Render updated bookmarks list
+    renderBookmarks();
 }

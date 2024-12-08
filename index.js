@@ -1,90 +1,114 @@
-// Array to hold bookmarks
+
+const apiUrl = 'https://crudcrud.com/api/7c8d488cf2e14cbcb815b7e87b839c9c/bookmarks'; 
+
+
 let bookmarks = [];
 
-// Load bookmarks from local storage when the page loads
-window.onload = function() {
-    const storedBookmarks = JSON.parse(localStorage.getItem('bookmarks'));
-    if (storedBookmarks) {
-        bookmarks = storedBookmarks;
-        renderBookmarks();
-    }
+
+window.onload = function () {
+    loadBookmarks();
 };
 
-// Function to add a bookmark
-function addBookmark() {
-    event.preventDefault();
-    
-    // Get the title and URL from input fields
+
+function loadBookmarks() {
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load bookmarks');
+            }
+            return response.json(); 
+        })
+        .then(data => {
+            bookmarks = data; 
+            renderBookmarks(); 
+        })
+        .catch(error => console.error('Error loading bookmarks:', error));
+}
+
+
+function addBookmark(event) {
+    event.preventDefault(); 
+
+  
     const title = document.getElementById('title').value.trim();
     const url = document.getElementById('url').value.trim();
 
-    // Validate input fields
+
     if (!title || !url) {
         alert("Please fill in both the title and URL.");
-        return; // Exit the function if validation fails
+        return; 
     }
 
-    // Create a bookmark object
-    const bookmark = {
-        id: Date.now(), // Unique ID based on timestamp
-        title: title,
-        url: url
-    };
+    
+    const bookmark = { title, url };
 
-    // Add the bookmark to the array
-    bookmarks.push(bookmark);
 
-    // Save bookmarks to local storage
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-
-    // Clear input fields
-    document.getElementById('website').reset();
-
-    // Render bookmarks
-    renderBookmarks();
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookmark),
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to add bookmark');
+            }
+            return response.json();
+        })
+        .then(newBookmark => {
+            bookmarks.push(newBookmark);
+            document.getElementById('website').reset();
+            renderBookmarks();
+        })
+        .catch(error => console.error('Error adding bookmark:', error));
 }
 
-// Function to render bookmarks
+
 function renderBookmarks() {
     const bookmarkContainer = document.getElementById('bookmark');
-    
-    // Clear existing bookmarks
     bookmarkContainer.innerHTML = '';
 
-    // Loop through bookmarks and create HTML elements for each
-    bookmarks.forEach(bookmark => {
-        const div = document.createElement('div');
-        div.className = 'bookmark-item';
-        div.innerHTML = `
-            <h3>${bookmark.title}</h3>
-            <a href="${bookmark.url}" target="_blank">${bookmark.url}</a>
-            <button onclick="editBookmark(${bookmark.id})">Edit</button>
-            <button onclick="deleteBookmark(${bookmark.id})">Delete</button>
-        `;
-        bookmarkContainer.appendChild(div);
-    });
+    if (bookmarks.length === 0) {
+        bookmarkContainer.innerHTML = '<p>No bookmarks found.</p>';
+    } else {
+
+        bookmarks.forEach(bookmark => {
+            const div = document.createElement('div');
+            div.className = 'bookmark-item';
+            div.innerHTML = `
+                <h3>${bookmark.title}</h3>
+                <a href="${bookmark.url}" target="_blank">${bookmark.url}</a>
+                <button onclick="editBookmark('${bookmark._id}')">Edit</button>
+                <button onclick="deleteBookmark('${bookmark._id}')">Delete</button>
+            `;
+            bookmarkContainer.appendChild(div); 
+        });
+    }
 }
 
-// Function to edit a bookmark
+
 function editBookmark(id) {
-    const bookmark = bookmarks.find(b => b.id === id);
-    
+    const bookmark = bookmarks.find(b => b._id === id); 
+
     if (bookmark) {
+      
         document.getElementById('title').value = bookmark.title;
         document.getElementById('url').value = bookmark.url;
 
-        // Remove the bookmark from the array for editing
+    
         deleteBookmark(id);
     }
 }
 
-// Function to delete a bookmark
+
 function deleteBookmark(id) {
-    bookmarks = bookmarks.filter(bookmark => bookmark.id !== id);
-    
-    // Save updated bookmarks to local storage
-    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
-    
-    // Render updated bookmarks list
-    renderBookmarks();
+    fetch(`${apiUrl}/${id}`, { method: 'DELETE' }) 
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to delete bookmark');
+            }
+
+            bookmarks = bookmarks.filter(bookmark => bookmark._id !== id); 
+            renderBookmarks(); 
+        })
+        .catch(error => console.error('Error deleting bookmark:', error));
 }

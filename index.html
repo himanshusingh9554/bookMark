@@ -8,14 +8,14 @@
 </head>
 <body>
     <h1>Bookmark Website</h1>
-    <form id="website">
+    <form id="website" onsubmit="addBookmark(event)">
     <label for="title"> Website title:</label>
     <input type="text" id="title" placeholder="Enter Website title" required>
     <br></br>
     <label for="url">Website Url:</label>
     <input type="url" id="url" placeholder="Enter website url" required>
     <br></br>
-     <button onclick="addBookmark()">Add</button>
+     <button>Add</button>
 </form>
     <h2>All BookMark</h2>
     <div id="bookmark"></div>
